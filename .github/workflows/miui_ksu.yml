@@ -22,11 +22,7 @@ jobs:
       - name: Compiling Kernel
         run: |
           cd /home/runner/work/Sirius_kernel
-          cp -r /home/runner/work/KernelSU/kernel drivers/kernelsu
-          echo 'CONFIG_KPROBES=y' >> arch/arm64/configs/sirius_user_defconfig
-          echo 'CONFIG_HAVE_KPROBES=y' >> arch/arm64/configs/sirius_user_defconfig
-          echo 'CONFIG_KPROBE_EVENTS=y' >> arch/arm64/configs/sirius_user_defconfig
-
+          
           export ARCH=arm64
           export SUBARCH=arm64
           export CROSS_COMPILE=/home/runner/work/gcc4.9/bin/aarch64-linux-android-
