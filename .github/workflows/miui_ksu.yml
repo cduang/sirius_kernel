@@ -1,4 +1,4 @@
-name: Build MIUI_KernelSU For MI8SE(sirius)
+name: Build KernelSU For MI8SE(sirius)
 
 on:
   workflow_dispatch:
@@ -14,38 +14,31 @@ jobs:
           sudo apt clean
       - name: Cloning Sources and Toolchain
         run: |
-          git clone https://github.com/MiCode/Xiaomi_Kernel_OpenSource.git --depth=1 -b sirius-q-oss --recurse-submodules
-          git clone https://gitlab.com/crdroidandroid/android_prebuilts_clang_host_linux-x86_clang-r445002 --depth=1 --single-branch --no-tags -b 12.0 ~/clang
-          git clone https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 -b android-10.0.0_r47 --depth=1 --single-branch --no-tags ~/aarch64-linux-android-4.9
-          git clone https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9 -b android-10.0.0_r47 --depth=1 --single-branch --no-tags ~/arm-linux-androideabi-4.9
+          cd /root
+          git clone --depth=1 https://github.com/MiCode/Xiaomi_Kernel_OpenSource.git -b sirius-q-oss /root/Sirius_kernel
+          git clone --depth=1 https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9.git -b lineage-18.1
           git clone https://github.com/SakuraNotStupid/AnyKernel3
       - name: Compiling Kernel
         run: |
-          CLANG=~/clang/bin
-          GCC32=~/arm-linux-androideabi-4.9/bin
-          GCC64=~/aarch64-linux-android-4.9/bin
-          PATH=$CLANG:$GCC64:$GCC32:$PATH
-          export PATH
+          cd /root/Sirius_kernel
+          cp -r /root/KernelSU/kernel drivers/kernelsu
+          echo 'CONFIG_KPROBES=y' >> arch/arm64/configs/sirius_user_defconfig
+          echo 'CONFIG_HAVE_KPROBES=y' >> arch/arm64/configs/sirius_user_defconfig
+          echo 'CONFIG_KPROBE_EVENTS=y' >> arch/arm64/configs/sirius_user_defconfig
+
           export ARCH=arm64
-          export CLANG_TRIPLE=aarch64-linux-gnu
-          export CROSS_COMPILE=aarch64-linux-android-
-          export CROSS_COMPILE_ARM32=arm-linux-androideabi-
-          output_dir=out
-          pushd android_kernel_xiaomi_sdm710
-          make O="$output_dir" \
-                      sdm670-perf_defconfig \
-                      xiaomi/sdm710-common.config \
-                      xiaomi/sirius.config
-          make -j $(nproc) \
-                       O="$output_dir" \
-                       CC=clang
-          popd
+          export SUBARCH=arm64
+          export CROSS_COMPILE=/root/aarch64-linux-android-4.9/bin/aarch64-linux-android-
+
+          make O=out sirius_user_defconfig
+          make -j$(nproc) O=out 2>&1 | tee kernel.log
+
       - name: Creating Config Info
         run: |
           echo "Device: MI 8 SE
           Code: Sirius/Xmsirius
           Build Code: ${{ github.run_number }}
-          Only For LineageOS 20(Official)
+          Only For MIUI_OS
           KernelSU For MI8SE" >> INFO.txt
           
       - name: Packaging the Kernel
@@ -53,13 +46,13 @@ jobs:
           cp -v android_kernel_xiaomi_sdm710/out/arch/arm64/boot/Image.gz \
                      AnyKernel3/
           pushd AnyKernel3
-          7z a -mx9 ../MI8SE-MIUI-ksu.zip *
+          7z a -mx9 ../MI8SE-KernelSU_MiuiOS.zip *
           popd
       - name: Uploading Kernel Package to GH-Release
         uses: ncipollo/release-action@v1.8.6
         with:
-          artifacts: MI8SE-MIUI-ksu.zip
-          name: " MI8SE-MIUI-ksu"
-          tag: " ${{ github.run_number }}_MI8SE-MIUI-ksu"
+          artifacts: MI8SE-KernelSU_MiuiOS.zip
+          name: " MI8SE-KernelSU_MiuiOS"
+          tag: " ${{ github.run_number }}_MI8SE-KernelSU_MiuiOS"
           bodyFile: "INFO.txt"
           token: ${{ secrets.GITHUB_TOKEN }}
