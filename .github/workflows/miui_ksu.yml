@@ -9,6 +9,11 @@ jobs:
     steps:
       - name: Installing Dependencies
         run: |
+          sudo apt update -y
+          sudo apt-get install -y docker.io
+          sudo apt clean
+          
+          sudo docker run --name kernel -it ubuntu:18.04 bash
           sudo echo "deb http://mirrors.aliyun.com/ubuntu/ bionic main restricted universe multiverse" > /etc/apt/sources.list
           sudo echo "deb http://mirrors.aliyun.com/ubuntu/ bionic-security main restricted universe multiverse" >> /etc/apt/sources.list
           sudo echo "deb http://mirrors.aliyun.com/ubuntu/ bionic-updates main restricted universe multiverse" >> /etc/apt/sources.list
@@ -21,23 +26,23 @@ jobs:
           sudo echo "deb-src http://mirrors.aliyun.com/ubuntu/ bionic-backports main restricted universe multiverse" >> /etc/apt/sources.list
           sudo dpkg --add-architecture i386
           sudo apt-get update
-          sudo apt update -y
-          sudo apt-get install -y bc bison build-essential ccache curl flex g++-multilib gcc-multilib git gnupg gperf imagemagick lib32ncurses5-dev lib32readline-dev lib32z1-dev liblz4-tool libncurses5-dev libsdl1.2-dev libssl-dev libwxgtk3.0-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev unzip p7zip-full openjdk-8-jdk language-pack-zh-hans python vim
-          sudo apt clean
+          
+          apt-get install -y bc bison build-essential ccache curl flex g++-multilib gcc-multilib git gnupg gperf imagemagick lib32ncurses5-dev lib32readline-dev lib32z1-dev liblz4-tool libncurses5-dev libsdl1.2-dev libssl-dev libwxgtk3.0-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev unzip p7zip-full openjdk-8-jdk language-pack-zh-hans python vim
+          
       - name: Cloning Sources and Toolchain
         run: |
-          cd /home/runner/work
-          git clone --depth=1 https://github.com/MiCode/Xiaomi_Kernel_OpenSource.git -b sirius-q-oss /home/runner/work/Sirius_kernel
-          git clone --depth=1 https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9.git -b lineage-18.1  /home/runner/work/gcc4.9
+          cd /root
+          git clone --depth=1 https://github.com/MiCode/Xiaomi_Kernel_OpenSource.git -b sirius-q-oss /root/Sirius_kernel
+          git clone --depth=1 https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9.git -b lineage-18.1  /root/gcc4.9
           git clone https://github.com/tiann/KernelSU.git
           git clone https://github.com/SakuraNotStupid/AnyKernel3
       - name: Compiling Kernel
         run: |
-          cd /home/runner/work/Sirius_kernel
+          cd /root/Sirius_kernel
           
           export ARCH=arm64
           export SUBARCH=arm64
-          export CROSS_COMPILE=/home/runner/work/gcc4.9/bin/aarch64-linux-android-
+          export CROSS_COMPILE=/root/gcc4.9/bin/aarch64-linux-android-
 
           make O=out sirius_user_defconfig
           make -j$(nproc) O=out 2>&1 | tee kernel.log
@@ -52,11 +57,13 @@ jobs:
           
       - name: Packaging the Kernel
         run: |
-          cp -v /home/runner/work/Sirius_kernel/out/arch/arm64/boot/Image.gz \
+          cp -v /root/Sirius_kernel/out/arch/arm64/boot/Image.gz \
                      AnyKernel3/
           pushd AnyKernel3
           7z a -mx9 ../MI8SE-KernelSU_MiuiOS.zip *
           popd
+          exit
+          docker cp kernel:/root/MI8SE-KernelSU_MiuiOS.zip .
       - name: Uploading Kernel Package to GH-Release
         uses: ncipollo/release-action@v1.8.6
         with:
