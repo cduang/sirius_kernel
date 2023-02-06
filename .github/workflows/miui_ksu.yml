@@ -1,1 +1,60 @@
+name: Build KernelSU For MI8SE(sirius) only MIUI
 
+on:
+  workflow_dispatch:
+
+jobs:
+  KSUForSirius:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Installing Dependencies
+        run: |
+          sudo apt update -y
+          sudo apt-get install -y zip flex bison libncurses-dev gawk  libiberty-dev autoconf kmod bc build-essential gcc libc6 curl libstdc++6 git wget libssl-dev cpio p7zip-full
+          sudo apt clean
+      - name: Cloning Sources and Toolchain
+        run: |
+          cd /home/runner/work
+          git clone --depth=1 https://github.com/MiCode/Xiaomi_Kernel_OpenSource.git -b sirius-q-oss /home/runner/work/Sirius_kernel
+          git clone --depth=1 https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9.git -b lineage-18.1  /home/runner/work/gcc4.9
+          git clone https://github.com/tiann/KernelSU.git
+          git clone https://github.com/SakuraNotStupid/AnyKernel3
+      - name: Compiling Kernel
+        run: |
+          cd /home/runner/work/Sirius_kernel
+          cp -r /home/runner/work/KernelSU/kernel drivers/kernelsu
+          echo "obj-y += kernelsu/" >> drivers/Makefile
+          echo 'CONFIG_KPROBES=y' >> arch/arm64/configs/sirius_user_defconfig
+          echo 'CONFIG_HAVE_KPROBES=y' >> arch/arm64/configs/sirius_user_defconfig
+          echo 'CONFIG_KPROBE_EVENTS=y' >> arch/arm64/configs/sirius_user_defconfig
+
+          export ARCH=arm64
+          export SUBARCH=arm64
+          export CROSS_COMPILE=/home/runner/work/gcc4.9/bin/aarch64-linux-android-
+
+          make O=out sirius_user_defconfig
+          make -j$(nproc) O=out 2>&1 | tee kernel.log
+
+      - name: Creating Config Info
+        run: |
+          echo "Device: MI 8 SE
+          Code: Sirius/Xmsirius
+          Build Code: ${{ github.run_number }}
+          Only For MIUI_OS
+          KernelSU For MI8SE" >> INFO.txt
+          
+      - name: Packaging the Kernel
+        run: |
+          cp -v /home/runner/work/Sirius_kernel/out/arch/arm64/boot/Image.gz \
+                     AnyKernel3/
+          pushd AnyKernel3
+          7z a -mx9 ../MI8SE-KernelSU_MiuiOS.zip *
+          popd
+      - name: Uploading Kernel Package to GH-Release
+        uses: ncipollo/release-action@v1.8.6
+        with:
+          artifacts: MI8SE-KernelSU_MiuiOS.zip
+          name: " MI8SE-KernelSU_MiuiOS"
+          tag: " ${{ github.run_number }}_MI8SE-KernelSU_MiuiOS"
+          bodyFile: "INFO.txt"
+          token: ${{ secrets.GITHUB_TOKEN }}
