@@ -1,4 +1,4 @@
-name: Build KernelSU For MI8SE(sirius)
+name: Build KernelSU For MI8SE(sirius) only MIUI
 
 on:
   workflow_dispatch:
@@ -14,22 +14,21 @@ jobs:
           sudo apt clean
       - name: Cloning Sources and Toolchain
         run: |
-          pwd
-          cd /root
-          git clone --depth=1 https://github.com/MiCode/Xiaomi_Kernel_OpenSource.git -b sirius-q-oss /root/Sirius_kernel
+          cd /home/runner/work
+          git clone --depth=1 https://github.com/MiCode/Xiaomi_Kernel_OpenSource.git -b sirius-q-oss /home/runner/work/Sirius_kernel
           git clone --depth=1 https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9.git -b lineage-18.1
           git clone https://github.com/SakuraNotStupid/AnyKernel3
       - name: Compiling Kernel
         run: |
-          cd /root/Sirius_kernel
-          cp -r /root/KernelSU/kernel drivers/kernelsu
+          cd /home/runner/work/Sirius_kernel
+          cp -r /home/runner/work/KernelSU/kernel drivers/kernelsu
           echo 'CONFIG_KPROBES=y' >> arch/arm64/configs/sirius_user_defconfig
           echo 'CONFIG_HAVE_KPROBES=y' >> arch/arm64/configs/sirius_user_defconfig
           echo 'CONFIG_KPROBE_EVENTS=y' >> arch/arm64/configs/sirius_user_defconfig
 
           export ARCH=arm64
           export SUBARCH=arm64
-          export CROSS_COMPILE=/root/aarch64-linux-android-4.9/bin/aarch64-linux-android-
+          export CROSS_COMPILE=/home/runner/work/aarch64-linux-android-4.9/bin/aarch64-linux-android-
 
           make O=out sirius_user_defconfig
           make -j$(nproc) O=out 2>&1 | tee kernel.log
@@ -44,7 +43,7 @@ jobs:
           
       - name: Packaging the Kernel
         run: |
-          cp -v /root/Sirius_kernel/out/arch/arm64/boot/Image.gz \
+          cp -v /home/runner/work/Sirius_kernel/out/arch/arm64/boot/Image.gz \
                      AnyKernel3/
           pushd AnyKernel3
           7z a -mx9 ../MI8SE-KernelSU_MiuiOS.zip *
