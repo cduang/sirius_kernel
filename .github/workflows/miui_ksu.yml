@@ -16,7 +16,7 @@ jobs:
         run: |
           cd /home/runner/work
           git clone --depth=1 https://github.com/MiCode/Xiaomi_Kernel_OpenSource.git -b sirius-q-oss /home/runner/work/Sirius_kernel
-          git clone --depth=1 https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9.git -b lineage-18.1
+          git clone --depth=1 https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9.git -b lineage-18.1  /home/runner/work/gcc4.9
           git clone https://github.com/tiann/KernelSU.git
           git clone https://github.com/SakuraNotStupid/AnyKernel3
       - name: Compiling Kernel
@@ -29,7 +29,7 @@ jobs:
 
           export ARCH=arm64
           export SUBARCH=arm64
-          export CROSS_COMPILE=/home/runner/work/aarch64-linux-android-4.9/bin/aarch64-linux-android-
+          export CROSS_COMPILE=/home/runner/work/gcc4.9/bin/aarch64-linux-android-
 
           make O=out sirius_user_defconfig
           make -j$(nproc) O=out 2>&1 | tee kernel.log
