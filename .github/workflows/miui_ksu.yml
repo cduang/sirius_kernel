@@ -27,9 +27,11 @@ jobs:
           echo 'CONFIG_KPROBES=y' >> arch/arm64/configs/sirius_user_defconfig
           echo 'CONFIG_HAVE_KPROBES=y' >> arch/arm64/configs/sirius_user_defconfig
           echo 'CONFIG_KPROBE_EVENTS=y' >> arch/arm64/configs/sirius_user_defconfig
+          echo 'CONFIG_BUILD_ARM64_DT_OVERLAY=y' >> arch/arm64/configs/sirius_user_defconfig
 
           export ARCH=arm64
           export SUBARCH=arm64
+          export DTC_EXT=dtc
           export CROSS_COMPILE=/home/runner/work/gcc4.9/bin/aarch64-linux-android-
 
           make O=out sirius_user_defconfig
