@@ -1,4 +1,4 @@
-name: Build KernelSU For MI8SE(sirius) Only Miui
+name: Build KernelSU For MI8SE(sirius)
 
 on:
   workflow_dispatch:
@@ -14,6 +14,7 @@ jobs:
           sudo apt clean
       - name: Cloning Sources and Toolchain
         run: |
+          pwd
           cd /root
           git clone --depth=1 https://github.com/MiCode/Xiaomi_Kernel_OpenSource.git -b sirius-q-oss /root/Sirius_kernel
           git clone --depth=1 https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9.git -b lineage-18.1
@@ -43,7 +44,7 @@ jobs:
           
       - name: Packaging the Kernel
         run: |
-          cp -v android_kernel_xiaomi_sdm710/out/arch/arm64/boot/Image.gz \
+          cp -v /root/Sirius_kernel/out/arch/arm64/boot/Image.gz \
                      AnyKernel3/
           pushd AnyKernel3
           7z a -mx9 ../MI8SE-KernelSU_MiuiOS.zip *
